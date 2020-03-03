@@ -20,6 +20,7 @@
 # DEALINGS IN THE SOFTWARE.
 ################################################################################
 
+import os
 import sys
 sys.path.append('../')
 import gi
@@ -52,6 +53,16 @@ TILED_OUTPUT_WIDTH=1920
 TILED_OUTPUT_HEIGHT=1080
 GST_CAPS_FEATURES_NVMM="memory:NVMM"
 pgie_classes_str= ["Vehicle", "TwoWheeler", "Person","RoadSign"]
+
+
+def engine_filename(engine_basename:str, num_sources:int) -> str:
+    homedir = os.path.expanduser('~')
+    appdir = os.path.join(homedir, '.pyds')
+    os.makedirs(appdir, mode=0o755, exist_ok=True)
+    # the last bit will have to change for Nano
+    engine_filename = f"{engine_basename}_b{num_sources}_int8.engine"
+    return os.path.join(appdir, engine_filename)
+
 
 # tiler_sink_pad_buffer_probe  will extract metadata received on OSD sink pad
 # and update params for drawing rectangle, object information etc.
@@ -287,6 +298,9 @@ def main(args):
     if(pgie_batch_size != number_sources):
         print("WARNING: Overriding infer-config batch-size",pgie_batch_size," with number of sources ", number_sources," \n")
         pgie.set_property("batch-size",number_sources)
+    model_engine_file = engine_filename("resnet10", number_sources)
+    pgie.set_property('model-engine-file', model_engine_file)
+    print(f"setting model-engine-file property on pgie to {model_engine_file}")
     tiler_rows=int(math.sqrt(number_sources))
     tiler_columns=int(math.ceil((1.0*number_sources)/tiler_rows))
     tiler.set_property("rows",tiler_rows)
